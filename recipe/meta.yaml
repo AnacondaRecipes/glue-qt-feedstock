@@ -10,60 +10,72 @@ source:
   sha256: d3e8aa2e1f4092dfe8158523a4c9508f0759a400e8cca8a711669361ce23e883
 
 build:
+  number: 0
+  # No dependencies for py39
+  skip: true  # [py<310]
+  script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
+  osx_is_app: true  # [osx]
   entry_points:
     - glue = glue_qt.main:main
-  script: {{ PYTHON }} -m pip install . -vv
-  string: win_pyh{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [win]
-  string: unix_pyh{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [unix]
-  number: 1
-  osx_is_app: true  # [osx]
 
 requirements:
   host:
-    - python
-    - setuptools-scm
     - pip
+    - python
+    - setuptools
+    - setuptools_scm
   run:
-
-    # The following is needed to make sure that the package works as a GUI
-    # application (glue needs to be run with python.app, not python)
-    - python.app  # [osx]
-
     - python
     - glue-core >=1.15.0
     - numpy >=1.17
     - matplotlib-base >=3.2
     - scipy >=1.1
     - echo >=0.6
-    - astropy-base >=4.0
+    - astropy >=4.0
     - setuptools >=30.3.0
     - qtpy >=1.9
     - ipython >=4.0
     - ipykernel >=4.0,!=5.0.0,!=5.1.0
     - qtconsole >=4.3,!=5.4.2
     - pvextractor >=0.2
-    - importlib-resources >=1.3
-    - importlib-metadata >=3.6
-    - pyqt
+    - importlib-resources >=1.3  # [py<39]
+    - importlib-metadata >=3.6  # [py<310]
+  run_constrained:
+    - pyqt >=5.14,<6.0.0a0
+
+{% set tests_to_skip = "_not_a_real_test" %}
+# AttributeError: 'Axes' object has no attribute 'coords'
+{% set tests_to_skip = tests_to_skip + " or test_load_viewers_04" %}  # [py<311]
+{% set tests_to_skip = tests_to_skip + " or test_load_pixel_components_07" %}  # [py<311]
+
 test:
   imports:
     - glue_qt
     - glue_qt.app
+  requires:
+    - pip >=18.0
+    - pytest
+    - pyqt
+    - setuptools >=30.3.0
   commands:
     - pip check
     - glue --help
     - glue --version
-  requires:
-    - pip
+    - QT_QPA_PLATFORM=offscreen pytest -v --pyargs glue_qt.tests -k "not ({{ tests_to_skip }})" # [unix]
+    - pytest -v --pyargs glue_qt.tests -k "not ({{ tests_to_skip }})" # [not unix]
 
 # NOTE: we deliberatey do NOT include an app entry here, because we instead do this
 # in the glueviz meta-package (we don't want glue to appear twice in the navigator)
 
 about:
-  home: http://glueviz.org
-  summary: Multidimensional data visualization across files
+  home: https://github.com/glue-viz/glue-qt/tree/main
   license: BSD-3-Clause
+  license_family: BSD
   license_file: LICENSE
+  summary: Multidimensional data visualization across files
+  description: Glue is a python project to link visualizations of scientific datasets across many files
+  doc_url: https://glueviz.org
+  dev_url: https://github.com/glue-viz/glue-qt/tree/main
 
 extra:
   recipe-maintainers:
