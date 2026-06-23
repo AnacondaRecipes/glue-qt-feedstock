@@ -1,18 +1,24 @@
 {% set name = "glue-qt" %}
-{% set version = "0.3.3" %}
+{% set version = "0.4.2" %}
+{% set tests_to_skip = "_not_a_real_test" %}
+{% set tests_to_skip = tests_to_skip + " or test_load_viewers_04" %}  # [py<311]
+{% set tests_to_skip = tests_to_skip + " or test_load_pixel_components_07" %}  # [py<311]
 
+# AttributeError: 'Axes' object has no attribute 'coords'
+# NOTE: we deliberatey do NOT include an app entry here, because we instead do this
+# in the glueviz meta-package (we don't want glue to appear twice in the navigator)
 package:
   name: {{ name|lower }}
   version: {{ version }}
 
 source:
   url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/{{ name | replace('-', '_') }}-{{ version }}.tar.gz
-  sha256: d3e8aa2e1f4092dfe8158523a4c9508f0759a400e8cca8a711669361ce23e883
+  sha256: a50a2641c0cfc23081e1e76e0267c73fa6ba2eccc6151c9143bc5e603f4c5423
 
 build:
   number: 0
   # No dependencies for py39
-  skip: true  # [py<310]
+  skip: true  # [py<38]
   script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
   osx_is_app: true  # [osx]
   entry_points:
@@ -22,11 +28,12 @@ requirements:
   host:
     - pip
     - python
-    - setuptools
+    - setuptools >=61.2
     - setuptools_scm
+    - setuptools-scm
   run:
     - python
-    - glue-core >=1.15.0
+    - glue-core >=1.23.0
     - numpy >=1.17
     - matplotlib-base >=3.2
     - scipy >=1.1
@@ -34,19 +41,14 @@ requirements:
     - astropy >=4.0
     - setuptools >=30.3.0
     - qtpy >=1.9
-    - ipython >=4.0
+    - ipython >=4.0,<9.0
     - ipykernel >=4.0,!=5.0.0,!=5.1.0
     - qtconsole >=4.3,!=5.4.2
     - pvextractor >=0.2
     - importlib-resources >=1.3  # [py<39]
     - importlib-metadata >=3.6  # [py<310]
   run_constrained:
-    - pyqt >=5.14,<6.0.0a0
-
-{% set tests_to_skip = "_not_a_real_test" %}
-# AttributeError: 'Axes' object has no attribute 'coords'
-{% set tests_to_skip = tests_to_skip + " or test_load_viewers_04" %}  # [py<311]
-{% set tests_to_skip = tests_to_skip + " or test_load_pixel_components_07" %}  # [py<311]
+    - pyqt >=5.14
 
 test:
   imports:
@@ -61,11 +63,8 @@ test:
     - pip check
     - glue --help
     - glue --version
-    - QT_QPA_PLATFORM=offscreen pytest -v --pyargs glue_qt.tests -k "not ({{ tests_to_skip }})" # [unix]
-    - pytest -v --pyargs glue_qt.tests -k "not ({{ tests_to_skip }})" # [not unix]
-
-# NOTE: we deliberatey do NOT include an app entry here, because we instead do this
-# in the glueviz meta-package (we don't want glue to appear twice in the navigator)
+    - QT_QPA_PLATFORM=offscreen pytest -v --pyargs glue_qt.tests -k "not ({{ tests_to_skip }})"  # [unix]
+    - pytest -v --pyargs glue_qt.tests -k "not ({{ tests_to_skip }})"  # [not unix]
 
 about:
   home: https://github.com/glue-viz/glue-qt/tree/main
