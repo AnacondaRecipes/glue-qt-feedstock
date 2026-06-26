@@ -15,7 +15,8 @@ build:
   osx_is_app: true  # [osx]
   entry_points:
     - glue = glue_qt.main:main
-  skip: true  # [py<38]
+  # Ipython 9.6.0+ start supporting python 3.14, skip 314.
+  skip: true  # [py<38 or py>313]
 
 requirements:
   host:
